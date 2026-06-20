@@ -1,3 +1,4 @@
+import sys
 import uuid
 from pathlib import Path
 
@@ -56,7 +57,11 @@ async def upload_file(
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     size = 0
-    async with aiofiles.open(dest, "wb") as f:
+    # Use extended-length path prefix on Windows to bypass MAX_PATH (260 char) limit
+    open_path: Path | str = dest
+    if sys.platform == "win32":
+        open_path = "\\\\?\\" + str(dest.resolve())
+    async with aiofiles.open(open_path, "wb") as f:
         while chunk := await file.read(1024 * 1024):
             await f.write(chunk)
             size += len(chunk)
