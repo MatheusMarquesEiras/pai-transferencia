@@ -81,6 +81,49 @@ async def upload_file(
     return {"uploaded": uploaded, "total": folder.total_files}
 
 
+@router.post("/{session_id}/file-chunk")
+async def upload_file_chunk(
+    session_id: str,
+    file: UploadFile,
+    relative_path: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    total_size: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    folder = db.get(Folder, session_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+
+    safe_path = validate_path(relative_path)
+    dest = UPLOAD_DIR / session_id / safe_path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    open_path: Path | str = dest
+    if sys.platform == "win32":
+        open_path = "\\\\?\\" + str(dest.resolve())
+
+    mode = "wb" if chunk_index == 0 else "ab"
+    async with aiofiles.open(open_path, mode) as f:
+        while data := await file.read(1024 * 1024):
+            await f.write(data)
+
+    if chunk_index == total_chunks - 1:
+        db.add(
+            File(
+                folder_id=session_id,
+                relative_path=str(safe_path).replace("\\", "/"),
+                filename=safe_path.name,
+                size=total_size,
+            )
+        )
+        folder.total_size = (folder.total_size or 0) + total_size
+        db.commit()
+
+    uploaded = db.query(File).filter(File.folder_id == session_id).count()
+    return {"uploaded": uploaded, "total": folder.total_files}
+
+
 @router.post("/{session_id}/complete")
 async def complete_upload(
     session_id: str,

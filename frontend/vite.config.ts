@@ -11,6 +11,8 @@ export default defineConfig({
       '/api': {
         target: `http://localhost:${backendPort}`,
         changeOrigin: true,
+        timeout: 0,        // sem timeout de socket
+        proxyTimeout: 0,   // sem timeout aguardando resposta do backend
       },
     },
   },

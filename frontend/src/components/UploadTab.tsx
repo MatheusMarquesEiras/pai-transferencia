@@ -106,6 +106,8 @@ export default function UploadTab() {
     setCurrentProgress(0)
     setError('')
 
+    const CHUNK_SIZE = 64 * 1024 * 1024 // 64 MB
+
     try {
       for (let fi = 0; fi < folders.length; fi++) {
         setCurrentFolderIndex(fi)
@@ -121,16 +123,38 @@ export default function UploadTab() {
 
         for (let i = 0; i < files.length; i++) {
           const { file, relativePath } = files[i]
-          const fd = new FormData()
-          fd.append('file', file, file.name)
-          fd.append('relative_path', relativePath)
 
-          await axios.post(`/api/upload/${sessionId}/file`, fd, {
-            onUploadProgress: (ev) => {
-              const pct = ev.total ? ev.loaded / ev.total : 1
-              setCurrentProgress(Math.round(((i + pct) / files.length) * 100))
-            },
-          })
+          if (file.size <= CHUNK_SIZE) {
+            const fd = new FormData()
+            fd.append('file', file, file.name)
+            fd.append('relative_path', relativePath)
+            await axios.post(`/api/upload/${sessionId}/file`, fd, {
+              onUploadProgress: (ev) => {
+                const pct = ev.total ? ev.loaded / ev.total : 1
+                setCurrentProgress(Math.round(((i + pct) / files.length) * 100))
+              },
+            })
+          } else {
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+            for (let ci = 0; ci < totalChunks; ci++) {
+              const start = ci * CHUNK_SIZE
+              const chunk = file.slice(start, Math.min(start + CHUNK_SIZE, file.size))
+              const fd = new FormData()
+              fd.append('file', chunk, file.name)
+              fd.append('relative_path', relativePath)
+              fd.append('chunk_index', String(ci))
+              fd.append('total_chunks', String(totalChunks))
+              fd.append('total_size', String(file.size))
+              await axios.post(`/api/upload/${sessionId}/file-chunk`, fd, {
+                onUploadProgress: (ev) => {
+                  const chunkPct = ev.total ? ev.loaded / ev.total : 1
+                  const filePct = (ci + chunkPct) / totalChunks
+                  setCurrentProgress(Math.round(((i + filePct) / files.length) * 100))
+                },
+              })
+            }
+          }
+
           setCurrentProgress(Math.round(((i + 1) / files.length) * 100))
         }
 
