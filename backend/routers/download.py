@@ -7,6 +7,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -138,6 +139,66 @@ async def delete_folder(folder_id: str, db: Session = Depends(get_db)):
 
     db.delete(folder)
     db.commit()
+    return {"ok": True}
+
+
+@router.get("/files")
+async def list_all_files(
+    q: str = Query(""),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    query = db.query(File).join(Folder)
+    if q:
+        query = query.filter(File.relative_path.ilike(f"%{q}%"))
+
+    total = query.count()
+    files = (
+        query.order_by(func.lower(File.filename), func.lower(File.relative_path))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "total": total,
+        "files": [
+            {
+                "id": f.id,
+                "folder_id": f.folder_id,
+                "folder_name": f.folder.original_name,
+                "path": f.relative_path,
+                "name": f.filename,
+                "size": f.size,
+            }
+            for f in files
+        ],
+    }
+
+
+@router.delete("/files/{file_id}")
+async def delete_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+):
+    file_record = db.get(File, file_id)
+    if not file_record:
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+
+    folder = file_record.folder
+    safe = Path(file_record.relative_path.replace("\\", "/").lstrip("/"))
+    fp = UPLOAD_DIR / file_record.folder_id / safe
+
+    if fp.exists():
+        fp.unlink()
+
+    folder.total_files = max(0, folder.total_files - 1)
+    folder.total_size = max(0, folder.total_size - file_record.size)
+
+    db.delete(file_record)
+    db.commit()
+
     return {"ok": True}
 
 

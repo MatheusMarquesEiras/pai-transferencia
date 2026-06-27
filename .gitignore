@@ -1,0 +1,47 @@
+# ── Arquivos enviados pelos usuários ──────────────────────────────────────────
+all_files/
+
+# ── Banco de dados ─────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Backend Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+*.env
+*.log
+
+# ── Frontend Node ──────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# ── Lockfiles alternativos (manter apenas package-lock.json) ──────────────────
+frontend/bun.lock
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+
+# ── Cache e ferramentas ────────────────────────────────────────────────────────
+.cache/
+*.tsbuildinfo
+.vite/
+
+# ── SO ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDEs ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo

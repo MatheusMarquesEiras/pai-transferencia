@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import UploadTab from './components/UploadTab'
 import DownloadTab from './components/DownloadTab'
+import FilesTab from './components/FilesTab'
 import SettingsTab from './components/SettingsTab'
 import { useSettings } from './hooks/useSettings'
 
-type Tab = 'upload' | 'download' | 'settings'
+type Tab = 'upload' | 'download' | 'files' | 'settings'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'upload',   label: 'Enviar',        icon: '📤' },
   { id: 'download', label: 'Receber',       icon: '📥' },
+  { id: 'files',    label: 'Arquivos',      icon: '🗃️' },
   { id: 'settings', label: 'Configurações', icon: '⚙️' },
 ]
 
@@ -46,6 +48,7 @@ export default function App() {
 
         {activeTab === 'upload'   && <UploadTab />}
         {activeTab === 'download' && <DownloadTab settings={settings} />}
+        {activeTab === 'files'    && <FilesTab settings={settings} />}
         {activeTab === 'settings' && <SettingsTab settings={settings} update={update} />}
       </div>
     </div>

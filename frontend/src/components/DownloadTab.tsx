@@ -246,6 +246,7 @@ export default function DownloadTab({ settings }: Props) {
                     🗑️
                   </button>
                 </div>
+
               </div>
             ))}
           </div>
@@ -254,7 +255,9 @@ export default function DownloadTab({ settings }: Props) {
         {/* Modal de confirmação */}
         {folderToDelete && (
           <ConfirmDeleteModal
-            folder={folderToDelete}
+            name={folderToDelete.original_name}
+            subtitle={`${folderToDelete.total_files} arquivo${folderToDelete.total_files !== 1 ? 's' : ''} · ${formatBytes(folderToDelete.total_size)}`}
+            type="folder"
             delayEnabled={settings.deleteDelay}
             onConfirm={confirmDelete}
             onCancel={() => setFolderToDelete(null)}
@@ -406,7 +409,9 @@ export default function DownloadTab({ settings }: Props) {
       {/* Modal de confirmação */}
       {folderToDelete && (
         <ConfirmDeleteModal
-          folder={folderToDelete}
+          name={folderToDelete.original_name}
+          subtitle={`${folderToDelete.total_files} arquivo${folderToDelete.total_files !== 1 ? 's' : ''} · ${formatBytes(folderToDelete.total_size)}`}
+          type="folder"
           delayEnabled={settings.deleteDelay}
           onConfirm={confirmDelete}
           onCancel={() => setFolderToDelete(null)}
